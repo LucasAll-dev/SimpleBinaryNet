@@ -1,5 +1,6 @@
-
+import matplotlib.pyplot as plt
 import numpy as np
+import random
 
 # Lucas-all: Funcao que gera um Array com um Kbit de dados Binarios(1024 de bits)
 def KbitGeneretion (): # So precisa chamar essa funcao para gerar o array 
@@ -49,8 +50,23 @@ quadros_com_stuffing = []
 for datagrama in quadros_32bits:
     quadros_stuffing = [bit_stuffing(quadro) for quadro in datagrama]
     quadros_com_stuffing.append(quadros_stuffing)
+'''
+# Ryuuky: so pra mostrar o stuffing, eu nao sabia como mostrar, deepseek novamente sendo um pai
+print("\n=== Quadros com Bit Stuffing ===")
+for i, datagrama in enumerate(quadros_com_stuffing, 1):
+    print(f"\nDatagrama {i}:")
+    for j, quadro in enumerate(datagrama, 1):
+        bits_str = ''.join(map(str, quadro))
+        print(f"  Quadro {j}: {bits_str}")
+        print(f"  Bits adicionados: {len(quadro)-32}")  # 32 é o tamanho original do quadro
 
-
+# Ryuukyz: Tinha a impressao q os quadros estavam saindo iguais, entao pedi um teste pro deepseek (meu pai)
+print("\n=== Verificando quadros duplicados por datagrama ===")
+for i, datagrama in enumerate(quadros_32bits, 1):
+    quadros_unicos = set([''.join(map(str, quadro)) for quadro in datagrama])
+    print(f"Datagrama {i}: {len(quadros_unicos)} quadros únicos de {len(datagrama)}")
+'''
+    
 # Lucas-all: Converte a lista de bits para string binaria
 def bits_list_para_string(lista_bits):
     return ''.join(str(bit) for bit in lista_bits)
@@ -116,18 +132,59 @@ def Add_bitsParidade(datagramas):
 
 # Lucas-all: Variavel que recebe a funcao de adicionar os bits de paridade, recebendo os 3 datagramas com seus quadros de bits
 resultado = Add_bitsParidade(quadros_com_stuffing)
+'''
+# Lucas-all: Exibir resultados
+print("\n\n\n============== Quadros com CRC ==============")
+for i, datagrama in enumerate(resultado):
+    print(f"\nDatagrama {i+1}:")
+    for j, quadro in enumerate(datagrama):
+        print(f"  Quadro {j+1}: {quadro[:10]}...[CRC: {quadro[-32:]}]")
+'''
 
 
-def quadros_grafico(datagrama_crc):
-    datagramas_quadros = []
+# Lucas-all: funcao que escolhe o mesmo quadro dos 3 datagramas e mostra o sinal digital em um grafico
+def quadros_grafico(datagramas):
+    # Lucas-all: Encontra o numero minimo de quadros entre todo os datagramas
+    min_quadros = min(len(datagrama) for datagrama in datagramas)
 
-    for i, datagrama in enumerate(datagrama_crc):
-        #datagrama_in = []
-        for j, quadro in enumerate(datagrama):
-            tamanho = len(quadro)
-            datagramas_quadros = tamanho
-    return datagramas_quadros
+    # Lucas-all: caso a qunatidade de quadros for 0 o programa e encerrado
+    if min_quadros == 0:
+        print("Nenhum quadro disponivel")
+        return
+    
+    # Lucas-all: seleciona um numero aleatorio para todos os datagramas
+    num_quadro = random.randint(0, min_quadros -1)
+    print(f"\nSelecionando quadros no indice {num_quadro} de cada datagrama")
 
-graficos = quadros_grafico(resultado)
+    # Lucas-all: Cria uma figura com subplots
+    fig, axs = plt.subplots(3, 1, figsize=(12, 8))
+    fig.suptitle(f"Sinais digitais dos Quadros Selecionados (Indice {num_quadro})")
 
-print(graficos)
+    # Lucas-all: verifica se o datagrama tem quadros suficientes
+    for i, datagrama in enumerate(datagramas):
+
+        if len(datagrama) > num_quadro:
+            quadro = datagrama[num_quadro]
+
+            # Lucas-all: Converte para lista dfe bitys se necessario
+            if isinstance(quadro, str):
+                sinal = [int(bit) for bit in quadro]
+            elif isinstance(quadro, list):
+                sinal = quadro
+            else:
+                sinal = [int(bit) for bit in bin(quadro)[2:]]
+
+            # Lucas-all: plota o sinal digital
+            axs[i].step(range(len(sinal)), sinal, where='post')
+            axs[i].set_title(f'Datagrama {i+1} - Quadro {num_quadro}')
+            axs[i].set_xlabel('Bit Index')
+            axs[i].set_ylabel('Valor')
+            axs[i].set_yticks([0,1])
+            axs[i].grid(True)
+        else:
+            print(f"Datagrama {i+1} nao possui quadros no indice {num_quadro}")
+
+    plt.tight_layout()
+    plt.show()
+
+teste_grafico = quadros_grafico(resultado)
